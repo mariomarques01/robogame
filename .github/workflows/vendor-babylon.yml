@@ -1,0 +1,36 @@
+name: Vendor Babylon.js locally
+on:
+  push:
+    paths:
+      - .github/workflows/vendor-babylon.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Download official Babylon.js package
+        run: |
+          set -eu
+          mkdir -p vendor
+          npm pack babylonjs@7.54.3 --pack-destination /tmp --silent
+          tar -xzf /tmp/babylonjs-7.54.3.tgz -C /tmp
+          cp /tmp/package/babylon.js vendor/babylon.js
+          test -s vendor/babylon.js
+          echo "Local Babylon.js size: $(wc -c < vendor/babylon.js) bytes"
+      - name: Commit vendored engine
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add vendor/babylon.js
+          if ! git diff --cached --quiet; then
+            git commit -m "vendor: include Babylon.js 7.54.3 locally"
+            git push
+          fi
