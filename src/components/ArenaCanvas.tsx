@@ -7,7 +7,7 @@ import { soundManager } from '../utils/audio';
 declare global {
   interface Window {
     roboScout3D?: {
-      draw: (ctx: CanvasRenderingContext2D, x: number, y: number, radius: number, time: number, enemy: boolean) => void;
+      draw: (ctx: CanvasRenderingContext2D, x: number, y: number, radius: number, time: number, enemy: boolean, state: 'moving' | 'charging_node' | 'attacking', recoil: number, facingAngle: number, evolved: boolean) => void;
     };
   }
 }
@@ -740,7 +740,7 @@ function drawLiveUnits(
     const avatarRadius = unit.radius * unit.scale;
     if (unit.robotId === 'scout-x' && window.roboScout3D) {
       try {
-        window.roboScout3D.draw(ctx, 0, 0, avatarRadius, time, !isPlayer);
+        window.roboScout3D.draw(ctx, 0, 0, avatarRadius, time, !isPlayer, unit.state, unit.recoil || 0, unit.facingAngle || 0, unit.isEvolved);
       } catch (error) {
         console.warn('SCOUT-X WebGL rendering failed', error);
         window.roboScout3D = undefined;
