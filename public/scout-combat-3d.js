@@ -43,7 +43,8 @@ for(const sign of [-1,1]){
  cube(0,-.415,.085,.21,.115,.30,blue,leg);
 }
 let lastFrame=-1;
-let mixer=null, loaded=null, previousTime=0;
+let mixer=null, loaded=null, previousTime=0, walkAction=null, attackAction=null;
+let activeMode='moving';
 const modelURL=new URL('./models/scout_x.glb',import.meta.url).href;
 new GLTFLoader().load(modelURL,(gltf)=>{
   loaded=gltf.scene;
@@ -51,10 +52,13 @@ new GLTFLoader().load(modelURL,(gltf)=>{
   scene.add(loaded);
   mixer=new THREE.AnimationMixer(loaded);
   const walk=gltf.animations.find(a=>a.name==='Walk');
-  if(walk) mixer.clipAction(walk).play();
+  if(walk){walkAction=mixer.clipAction(walk);walkAction.play();}
+  const attack=gltf.animations.find(a=>a.name==='Attack');
+  if(attack){attackAction=mixer.clipAction(attack);attackAction.play();attackAction.setEffectiveWeight(0);}
+
 },undefined,(err)=>console.warn('SCOUT-X GLB unavailable; procedural fallback active',err));
 window.roboScout3D={
-  draw(ctx,x,y,radius,time,enemy){
+  draw(ctx,x,y,radius,time,enemy,state='moving',recoil=0,facingAngle=0,evolved=false){
     // One render per animation frame, shared across all scout units.
     const frame=Math.floor(time/16);
     if(frame!==lastFrame){
@@ -62,11 +66,27 @@ window.roboScout3D={
       root.rotation.y=Math.sin(time*.001)*.12;
       root.position.y=Math.abs(Math.sin(phase))*.025;
       if(mixer) mixer.update(Math.min(.05,Math.max(0,(time-previousTime)/1000)));
+      if(loaded){loaded.rotation.y=0;loaded.scale.setScalar(1);}
+
       previousTime=time;
       arms.forEach(({arm,sign})=>{arm.rotation.x=Math.sin(phase+sign*Math.PI/2)*.34;});
       legs.forEach(({leg,sign})=>{leg.rotation.x=-Math.sin(phase+sign*Math.PI/2)*.36;});
       renderer.render(scene,camera);
       lastFrame=frame;
+    }
+    // Both teams share one render target: update animation pose for each unit.
+    if(mixer){
+      const attacking=state==='attacking';
+      walkAction?.setEffectiveWeight(attacking?.12:state==='moving'?1:.18);
+      attackAction?.setEffectiveWeight(attacking?1:0);
+      // Evaluate this unit's pose independently, including on frames with multiple scouts.
+      mixer.update(0);
+      if(loaded){
+        loaded.rotation.y=enemy?Math.PI:0;
+        loaded.rotation.z=Math.max(-.2,Math.min(.2,recoil*.16));
+        loaded.scale.setScalar(evolved?1.13:1);
+      }
+      renderer.render(scene,camera);
     }
     const size=radius*2.7;
     ctx.drawImage(renderer.domElement,x-size/2,y-size*.66,size,size);
