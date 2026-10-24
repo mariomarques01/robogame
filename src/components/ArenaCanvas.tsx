@@ -269,7 +269,7 @@ export const ArenaCanvas: React.FC<ArenaCanvasProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full max-h-[100dvh] aspect-[1024/1536] flex items-center justify-center mx-auto overflow-hidden select-none touch-none"
+      className="relative w-full h-full flex items-center justify-center overflow-hidden select-none touch-none"
       onPointerMove={handlePointerMove}
       onPointerDown={handlePointerDown}
       onContextMenu={(e) => {
@@ -281,7 +281,7 @@ export const ArenaCanvas: React.FC<ArenaCanvasProps> = ({
         ref={canvasRef}
         width={1024}
         height={1536}
-        className="w-full h-full object-contain cursor-pointer drop-shadow-2xl"
+        className="block w-full h-full cursor-pointer"
       />
     </div>
   );
