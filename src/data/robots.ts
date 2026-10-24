@@ -1,11 +1,11 @@
 import { RobotDefinition, ArenaSector } from '../types/game';
 
 // Exact cards from attachment
-const scoutCard = '/assets/aistudio/card_scout_x.png';
-const tankCard = '/assets/aistudio/card_tank_01.png';
-const voltCard = '/assets/aistudio/card_volt_7.png';
-const medCard = '/assets/aistudio/card_med_bot.png';
-const omegaCard = '/assets/aistudio/card_omega.png';
+const scoutCard = `${import.meta.env.BASE_URL}assets/aistudio/card_scout_x.png`;
+const tankCard = `${import.meta.env.BASE_URL}assets/aistudio/card_tank_01.png`;
+const voltCard = `${import.meta.env.BASE_URL}assets/aistudio/card_volt_7.png`;
+const medCard = `${import.meta.env.BASE_URL}assets/aistudio/card_med_bot.png`;
+const omegaCard = `${import.meta.env.BASE_URL}assets/aistudio/card_omega.png`;
 
 export const ROBOT_DECK: RobotDefinition[] = [
   {
