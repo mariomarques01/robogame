@@ -18,8 +18,10 @@ def mat(name, color, metal=0.3, emissive=False):
     bs.inputs["Metallic"].default_value = metal
     bs.inputs["Roughness"].default_value = 0.3
     if emissive:
-        bs.inputs["Emission Color"].default_value = (*color, 1)
-        bs.inputs["Emission Strength"].default_value = 4
+        color_input = bs.inputs.get("Emission Color") or bs.inputs.get("Emission")
+        strength_input = bs.inputs.get("Emission Strength")
+        if color_input: color_input.default_value = (*color, 1)
+        if strength_input: strength_input.default_value = 4
     return m
 
 white = mat("SCOUT Ceramic White", (0.82, 0.89, 0.96))
