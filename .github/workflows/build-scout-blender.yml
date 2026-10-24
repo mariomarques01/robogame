@@ -1,6 +1,10 @@
 name: Build SCOUT-X with free Blender
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/blender/generate_scout_x.py'
 permissions:
   contents: write
 jobs:
