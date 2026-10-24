@@ -4,6 +4,14 @@ import { RobotId, Unit, Tower, EnergyNode, Projectile, Particle, FloatingText } 
 import { ROBOT_DECK } from '../data/robots';
 import { soundManager } from '../utils/audio';
 
+declare global {
+  interface Window {
+    roboScout3D?: {
+      draw: (ctx: CanvasRenderingContext2D, x: number, y: number, radius: number, time: number, enemy: boolean) => void;
+    };
+  }
+}
+
 // Pristine clean background matching 100% of user attachment without static painted units/lasers
 const ARENA_IMAGE_SRC = `${import.meta.env.BASE_URL}assets/aistudio/arena_live_bg.png`;
 
@@ -49,6 +57,17 @@ export const ArenaCanvas: React.FC<ArenaCanvasProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
+
+  // Optional WebGL SCOUT-X overlay. Fail gracefully on offline browsers or unsupported GPUs.
+  useEffect(() => {
+    if (document.querySelector('script[data-scout-3d]')) return;
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.dataset.scout3d = 'true';
+    script.src = `${import.meta.env.BASE_URL}scout-combat-3d.js`;
+    script.onerror = () => console.warn('SCOUT-X 3D unavailable; keeping 2D fallback');
+    document.head.appendChild(script);
+  }, []);
 
   // Preloaded image assets
   const arenaImgRef = useRef<HTMLImageElement | null>(null);
@@ -719,7 +738,14 @@ function drawLiveUnits(
 
     // Draw Character from 3D Artwork
     const avatarRadius = unit.radius * unit.scale;
-    if (img && img.complete) {
+    if (unit.robotId === 'scout-x' && window.roboScout3D) {
+      try {
+        window.roboScout3D.draw(ctx, 0, 0, avatarRadius, time, !isPlayer);
+      } catch (error) {
+        console.warn('SCOUT-X WebGL rendering failed', error);
+        window.roboScout3D = undefined;
+      }
+    } else if (img && img.complete) {
       ctx.save();
       ctx.beginPath();
       ctx.arc(0, 0, avatarRadius, 0, Math.PI * 2);
