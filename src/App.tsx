@@ -136,9 +136,9 @@ export default function App() {
   }, [screen, selectedCardId, engine]);
 
   return (
-    <main className="w-screen h-screen bg-slate-950 flex items-center justify-center overflow-hidden font-sans select-none p-0">
+    <main className="w-full min-h-[100dvh] bg-slate-950 flex flex-col items-center justify-center overflow-x-hidden font-sans select-none p-0">
       {/* Exact 2:3 vertical aspect ratio mobile framing */}
-      <div className="relative w-full h-full max-h-[100dvh] aspect-[1024/1536] max-w-[512px] flex items-center justify-center overflow-hidden shadow-2xl bg-black">
+      <div className="relative w-full max-w-[512px] aspect-[1024/1536] flex-none overflow-hidden shadow-2xl bg-black">
         {/* Fullscreen Master Arena with native 1024x1536 HUD, cards & gameplay */}
         <ArenaCanvas
           engine={engine}
@@ -181,6 +181,7 @@ export default function App() {
           initialRobotId={inspectRobotId}
         />
       </div>
+      <a href={`${import.meta.env.BASE_URL}scout-preview.html`} className="block w-full max-w-[512px] text-center bg-cyan-950 text-cyan-100 py-3 font-semibold text-sm">Visualizar SCOUT-X em 3D (protótipo) ↗</a>
     </main>
   );
 }
