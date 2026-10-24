@@ -1,32 +1,29 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>SCOUT-X | Protótipo 3D</title>
-<style>html,body{margin:0;height:100%;background:#07101f;color:white;font-family:system-ui}#view{width:100%;height:calc(100dvh - 100px);touch-action:none}header{height:80px;box-sizing:border-box;padding:12px 16px}a{color:#67e8f9}small{color:#9ca3af}canvas{display:block}</style></head>
-<body><header><a href="./">← Voltar ao ROBO ARENA</a><div><b>SCOUT-X — Protótipo 3D</b></div><small>Arraste para girar • Pinça para zoom • Ainda sem rigging ou GLB</small></header><div id="view"></div>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>SCOUT-X | Modelo 3D</title>
+<style>html,body{margin:0;height:100%;background:#07101f;color:white;font-family:system-ui}#view{width:100%;height:calc(100dvh - 154px);touch-action:none}header{padding:12px 16px}a{color:#67e8f9}small{color:#9ca3af}canvas{display:block}button{background:#163e6b;border:1px solid #46c8ff;border-radius:8px;padding:10px;color:white;font-weight:bold}button:disabled{opacity:.5}#controls{display:flex;gap:8px;padding:8px 16px;flex-wrap:wrap}#status{padding:5px 16px;font-size:12px;color:#9ca3af}</style></head>
+<body><header><a href="./">← Voltar ao ROBO ARENA</a><div><b>SCOUT-X — Arquivo GLB do jogo</b></div><small>Arraste para girar • Pinça para zoom</small></header>
+<div id="view"></div><div id="controls"><button data-action="Walk">Caminhar</button><button data-action="Attack">Atacar</button><button data-action="stop">Parar</button><a href="./models/scout_x.glb" download="scout_x.glb">Baixar GLB</a></div><div id="status">Carregando modelo 3D...</div>
 <script type="module">
 import * as THREE from 'https://esm.sh/three@0.180.0';
 import {OrbitControls} from 'https://esm.sh/three@0.180.0/examples/jsm/controls/OrbitControls.js';
-const view=document.getElementById('view'),scene=new THREE.Scene();scene.background=new THREE.Color('#07101f');
+import {GLTFLoader} from 'https://esm.sh/three@0.180.0/examples/jsm/loaders/GLTFLoader.js';
+const view=document.getElementById('view'),status=document.getElementById('status'),scene=new THREE.Scene();scene.background=new THREE.Color('#07101f');
 const camera=new THREE.PerspectiveCamera(42,1,.1,100);camera.position.set(2.4,1.9,3.2);
 const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));view.appendChild(renderer.domElement);
 const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,.7,0);controls.enableDamping=true;
 scene.add(new THREE.HemisphereLight(0xcceeff,0x17233d,2.4));const sun=new THREE.DirectionalLight(0xffffff,3);sun.position.set(2,5,4);scene.add(sun);
-const material=(c,metal=.3,em=0)=>new THREE.MeshStandardMaterial({color:c,metalness:metal,roughness:.3,emissive:c,emissiveIntensity:em});
-const white=material('#dce8f4'),blue=material('#076bd1',.6),dark=material('#142035',.6),black=material('#020815'),cyan=material('#00dfff',0,2.2),steel=material('#627180',.8);
-const robot=new THREE.Group();scene.add(robot);
-function box(x,y,z,w,h,d,m,r=.02){const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);mesh.position.set(x,y,z);robot.add(mesh);if(r){const edges=new THREE.EdgesGeometry(mesh.geometry);/* simple low-poly placeholder */}return mesh}
-function sphere(x,y,z,sx,sy,sz,m){const mesh=new THREE.Mesh(new THREE.SphereGeometry(1,16,10),m);mesh.scale.set(sx,sy,sz);mesh.position.set(x,y,z);robot.add(mesh)}
-// Blender coordinates Z-up and front -Y are mapped to Three.js Y-up, front +Z.
-box(0,.77,0,.39,.36,.28,white);box(0,.81,.16,.26,.18,.045,blue);box(0,.83,.19,.06,.07,.025,cyan);
-box(0,.54,0,.29,.15,.23,dark);
-box(0,1.15,0,.65,.47,.41,white);box(0,1.17,.23,.56,.34,.05,blue);box(0,1.17,.265,.48,.26,.038,black);
-for(const sign of [-1,1]){sphere(sign*.118,1.19,.296,.052,.047,.015,cyan);box(sign*.33,1.15,0,.07,.18,.20,blue);
-sphere(sign*.295,.87,0,.11,.11,.11,dark);box(sign*.34,.90,0,.18,.18,.26,blue);
-box(sign*.37,.72,0,.14,.19,.16,white);sphere(sign*.38,.61,0,.075,.075,.075,steel);
-box(sign*.40,.51,0,.18,.19,.20,white);box(sign*.40,.52,.115,.13,.10,.03,blue);sphere(sign*.40,.38,0,.09,.08,.09,dark);
-sphere(sign*.15,.47,0,.09,.08,.08,dark);box(sign*.15,.36,0,.17,.23,.20,white);box(sign*.15,.365,.115,.12,.14,.027,blue);
-sphere(sign*.15,.24,0,.075,.07,.075,dark);box(sign*.15,.15,0,.16,.18,.19,white);box(sign*.15,.055,.085,.21,.11,.30,blue);
-}
-const floor=new THREE.Mesh(new THREE.CylinderGeometry(1.15,1.15,.04,48),material('#13243a',.6));floor.position.y=-.04;scene.add(floor);
+const floor=new THREE.Mesh(new THREE.CylinderGeometry(1.15,1.15,.04,48),new THREE.MeshStandardMaterial({color:'#13243a',metalness:.6,roughness:.4}));floor.position.y=-.04;scene.add(floor);
+let mixer=null,clips={};const clock=new THREE.Clock();
+new GLTFLoader().load('./models/scout_x.glb',gltf=>{
+ scene.add(gltf.scene);mixer=new THREE.AnimationMixer(gltf.scene);
+ for(const clip of gltf.animations)clips[clip.name]=mixer.clipAction(clip);
+ status.textContent='Modelo GLB carregado — animações: '+(Object.keys(clips).join(', ')||'nenhuma');
+ clips.Walk?.play();
+},undefined,error=>{status.textContent='Erro ao carregar GLB: '+error.message;console.error(error)});
+document.querySelectorAll('button[data-action]').forEach(button=>button.addEventListener('click',()=>{
+ if(!mixer)return;
+ mixer.stopAllAction();const action=clips[button.dataset.action];if(action){action.reset().play();}
+}));
 function resize(){const w=view.clientWidth,h=view.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h)}window.addEventListener('resize',resize);resize();
-function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,camera)}loop();
+function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05);mixer?.update(dt);controls.update();renderer.render(scene,camera)}loop();
 </script></body></html>
