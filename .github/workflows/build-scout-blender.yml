@@ -31,7 +31,7 @@ jobs:
           assert kind==0x4e4f534a
           model=json.loads(data[20:20+length])
           assert len(model.get('nodes',[]))>20
-          assert len(model.get('animations',[]))>=2, 'Expected Walk and Attack animation clips'
+          assert len(model.get('animations',[]))>=4, 'Expected Walk, Attack, Hit and Destroy animation clips'
           print('Validated GLB',len(data),'bytes',len(model['animations']),'clips')
           PY
       - name: Commit generated binary GLB to main

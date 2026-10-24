@@ -115,11 +115,13 @@ for side, sign in (("L", -1), ("R", 1)):
 
 # Two looping animation tracks, keyed on actual articulated pivot objects.
 for pivot, kind, sign in limb_groups:
-    for clip_name, amplitude in (("Walk", .36), ("Attack", .65)):
+    for clip_name, amplitude in (("Walk", .36), ("Attack", .65), ("Hit", .18), ("Destroy", 1.15)):
         pivot.rotation_mode = "XYZ"
         for frame in (1, 7, 13, 19, 25):
             phase = (frame - 1) / 24 * 2 * math.pi
             angle = math.sin(phase + (math.pi if sign > 0 else 0)) * amplitude
+            if clip_name == "Hit": angle = amplitude * math.sin(math.pi * (frame - 1) / 24)
+            if clip_name == "Destroy": angle = amplitude * (frame - 1) / 24 * (1 if sign > 0 else -1)
             pivot.rotation_euler.x = angle * (1 if kind == "Arm" else -1)
             pivot.keyframe_insert(data_path="rotation_euler", frame=frame)
         action = pivot.animation_data.action
