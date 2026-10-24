@@ -1,0 +1,51 @@
+name: Build SCOUT-X with free Blender
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/blender/generate_scout_x.py'
+permissions:
+  contents: write
+jobs:
+  build-scout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Install Blender (free/open-source)
+        run: sudo apt-get update && sudo apt-get install -y blender
+      - name: Generate articulated SCOUT-X GLB
+        run: blender --background --python scripts/blender/generate_scout_x.py
+      - name: Validate GLB output
+        run: |
+          python3 - <<'PY'
+          import json, struct, pathlib
+          p=pathlib.Path('public/models/scout_x.glb')
+          data=p.read_bytes()
+          assert data[:4]==b'glTF' and struct.unpack_from('<I',data,4)[0]==2
+          assert struct.unpack_from('<I',data,8)[0]==len(data)
+          length,kind=struct.unpack_from('<II',data,12)
+          assert kind==0x4e4f534a
+          model=json.loads(data[20:20+length])
+          assert len(model.get('nodes',[]))>20
+          assert len(model.get('animations',[]))>=2, 'Expected Walk and Attack animation clips'
+          print('Validated GLB',len(data),'bytes',len(model['animations']),'clips')
+          PY
+      - name: Commit generated binary GLB to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/models/scout_x.glb
+          if ! git diff --cached --quiet; then
+            git commit -m "build: update SCOUT-X GLB from Blender"
+            git push origin HEAD:main
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: scout-x-blender-model
+          path: |
+            public/models/scout_x.glb
+            public/models/scout_x.blend

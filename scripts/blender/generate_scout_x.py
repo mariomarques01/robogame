@@ -18,8 +18,10 @@ def mat(name, color, metal=0.3, emissive=False):
     bs.inputs["Metallic"].default_value = metal
     bs.inputs["Roughness"].default_value = 0.3
     if emissive:
-        bs.inputs["Emission Color"].default_value = (*color, 1)
-        bs.inputs["Emission Strength"].default_value = 4
+        color_input = bs.inputs.get("Emission Color") or bs.inputs.get("Emission")
+        strength_input = bs.inputs.get("Emission Strength")
+        if color_input: color_input.default_value = (*color, 1)
+        if strength_input: strength_input.default_value = 4
     return m
 
 white = mat("SCOUT Ceramic White", (0.82, 0.89, 0.96))
@@ -79,7 +81,7 @@ for label, sign in (("L",-1),("R",1)):
     box("Shin "+label, (sign*.15,0,.15), (.16,.19,.18), white)
     box("Foot "+label, (sign*.15,-.085,.055), (.21,.30,.11), blue, .035)
 
-# All parts are separate, ready for later bone parenting and animations.
+# Hierarchical articulated parts, ready for GLB animations.
 root = bpy.data.objects.new("SCOUT_X_ROOT", None)
 bpy.context.collection.objects.link(root)
 for obj in bpy.context.scene.objects:
@@ -87,7 +89,60 @@ for obj in bpy.context.scene.objects:
         world = obj.matrix_world.copy()
         obj.parent = root
         obj.matrix_world = world
-# GLB is exported now as a static first prototype; rigging comes after approval.
+# Articulated limbs: pivot empties with NLA actions exported as GLB clips.
+import math
+from mathutils import Matrix
+limb_groups = []
+for side, sign in (("L", -1), ("R", 1)):
+    for kind, pivot_z, prefixes in (
+        ("Arm", .79, ("Upper arm", "Elbow", "Forearm", "Fist", "Finger")),
+        ("Leg", .47, ("Thigh", "Knee", "Shin", "Foot")),
+    ):
+        pivot = bpy.data.objects.new(kind + "_" + side, None)
+        bpy.context.collection.objects.link(pivot)
+        pivot.parent = root
+        pivot.location = (sign * (.37 if kind == "Arm" else .15), 0, pivot_z)
+        bpy.context.view_layer.update()
+        for mesh in list(bpy.context.scene.objects):
+            if mesh.type != "MESH" or not mesh.name.endswith(side) and not (kind == "Arm" and mesh.name.startswith("Finger " + side)):
+                continue
+            if not any(mesh.name.startswith(prefix) for prefix in prefixes):
+                continue
+            world = mesh.matrix_world.copy()
+            mesh.parent = pivot
+            mesh.matrix_world = world
+        limb_groups.append((pivot, kind, sign))
+
+# Two looping animation tracks, keyed on actual articulated pivot objects.
+for pivot, kind, sign in limb_groups:
+    for clip_name, amplitude in (("Walk", .36), ("Attack", .65)):
+        pivot.rotation_mode = "XYZ"
+        for frame in (1, 7, 13, 19, 25):
+            phase = (frame - 1) / 24 * 2 * math.pi
+            angle = math.sin(phase + (math.pi if sign > 0 else 0)) * amplitude
+            pivot.rotation_euler.x = angle * (1 if kind == "Arm" else -1)
+            pivot.keyframe_insert(data_path="rotation_euler", frame=frame)
+        action = pivot.animation_data.action
+        action.name = clip_name + "_" + pivot.name
+        track = pivot.animation_data.nla_tracks.new()
+        track.name = clip_name
+        strip = track.strips.new(clip_name, 1, action)
+        strip.action_frame_start = 1
+        strip.action_frame_end = 25
+        pivot.animation_data.action = None
+    pivot.rotation_euler = (0, 0, 0)
+
+# Optimize viewport meshes before export: apply bevels and weighted normals.
+for obj in bpy.context.scene.objects:
+    if obj.type == "MESH":
+        bpy.context.view_layer.objects.active = obj
+        for modifier in list(obj.modifiers):
+            try:
+                bpy.ops.object.modifier_apply(modifier=modifier.name)
+            except RuntimeError:
+                pass
+bpy.context.scene.frame_set(1)
+
 bpy.ops.wm.save_as_mainfile(filepath=str(out / "scout_x.blend"))
-bpy.ops.export_scene.gltf(filepath=str(out / "scout_x.glb"), export_format="GLB")
+bpy.ops.export_scene.gltf(filepath=str(out / "scout_x.glb"), export_format="GLB", export_animations=True, export_nla_strips=True)
 print("SCOUT-X exported to", out / "scout_x.glb")
