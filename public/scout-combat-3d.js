@@ -44,7 +44,11 @@ for(const sign of [-1,1]){
 }
 let lastFrame=-1;
 let mixer=null, loaded=null, previousTime=0, walkAction=null, attackAction=null;
-let activeMode='moving';
+const flash=new THREE.Mesh(new THREE.SphereGeometry(.09,8,6),new THREE.MeshBasicMaterial({color:0x00eaff}));
+scene.add(flash);
+const bolt=new THREE.Mesh(new THREE.CylinderGeometry(.03,.04,.5,8),new THREE.MeshBasicMaterial({color:0x59efff}));
+scene.add(bolt);
+const sparks=Array.from({length:6},()=>{const m=new THREE.Mesh(new THREE.BoxGeometry(.03,.03,.08),new THREE.MeshBasicMaterial({color:0xffd16a}));scene.add(m);return m;});
 const modelURL=new URL('./models/scout_x.glb',import.meta.url).href;
 new GLTFLoader().load(modelURL,(gltf)=>{
   loaded=gltf.scene;
@@ -86,6 +90,18 @@ window.roboScout3D={
         loaded.rotation.z=Math.max(-.2,Math.min(.2,recoil*.16));
         loaded.scale.setScalar(evolved?1.13:1);
       }
+      const intensity=attacking?Math.max(.15,Math.min(1,recoil*2)):0;
+      flash.visible=bolt.visible=intensity>0;
+      flash.position.set(enemy?-.39:.39,.55,.28);
+      flash.scale.setScalar(.5+intensity*1.5);
+      bolt.position.set(flash.position.x,.55,.5);
+      bolt.rotation.x=Math.PI/2;
+      sparks.forEach((spark,i)=>{
+        const angle=i*Math.PI/3+time*.003;
+        spark.visible=intensity>0;
+        spark.position.set(flash.position.x+Math.cos(angle)*intensity*.2,.55+Math.sin(angle)*intensity*.2,.3);
+        spark.rotation.z=angle;
+      });
       renderer.render(scene,camera);
     }
     const size=radius*2.7;
