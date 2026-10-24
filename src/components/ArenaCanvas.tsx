@@ -5,15 +5,15 @@ import { ROBOT_DECK } from '../data/robots';
 import { soundManager } from '../utils/audio';
 
 // Pristine clean background matching 100% of user attachment without static painted units/lasers
-const ARENA_IMAGE_SRC = '/assets/aistudio/arena_live_bg.png';
+const ARENA_IMAGE_SRC = `${import.meta.env.BASE_URL}assets/aistudio/arena_live_bg.png`;
 
 // Character avatar images
 const robotAvatars: Record<RobotId, string> = {
-  'scout-x': '/assets/aistudio/robot_scout_x.png',
-  'tank-01': '/assets/aistudio/robot_tank_01.png',
-  'volt-7': '/assets/aistudio/robot_volt_7.png',
-  'med-bot': '/assets/aistudio/robot_med_bot.png',
-  'omega': '/assets/aistudio/robot_omega.png',
+  'scout-x': `${import.meta.env.BASE_URL}assets/aistudio/robot_scout_x.png`,
+  'tank-01': `${import.meta.env.BASE_URL}assets/aistudio/robot_tank_01.png`,
+  'volt-7': `${import.meta.env.BASE_URL}assets/aistudio/robot_volt_7.png`,
+  'med-bot': `${import.meta.env.BASE_URL}assets/aistudio/robot_med_bot.png`,
+  'omega': `${import.meta.env.BASE_URL}assets/aistudio/robot_omega.png`,
 };
 
 // 5 Card Bounds in 1024x1536 space
