@@ -2,6 +2,7 @@
 // the transparent result into the existing 2D battle canvas.
 // If WebGL/CDN fails, the original 2D sprite remains playable.
 import * as THREE from 'https://esm.sh/three@0.180.0';
+import { GLTFLoader } from 'https://esm.sh/three@0.180.0/examples/jsm/loaders/GLTFLoader.js';
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(35,1,.1,20);
 camera.position.set(2,1.7,3.6);
@@ -42,6 +43,16 @@ for(const sign of [-1,1]){
  cube(0,-.415,.085,.21,.115,.30,blue,leg);
 }
 let lastFrame=-1;
+let mixer=null, loaded=null, previousTime=0;
+const modelURL=new URL('./models/scout_x.glb',import.meta.url).href;
+new GLTFLoader().load(modelURL,(gltf)=>{
+  loaded=gltf.scene;
+  root.visible=false;
+  scene.add(loaded);
+  mixer=new THREE.AnimationMixer(loaded);
+  const walk=gltf.animations.find(a=>a.name==='Walk');
+  if(walk) mixer.clipAction(walk).play();
+},undefined,(err)=>console.warn('SCOUT-X GLB unavailable; procedural fallback active',err));
 window.roboScout3D={
   draw(ctx,x,y,radius,time,enemy){
     // One render per animation frame, shared across all scout units.
@@ -50,6 +61,8 @@ window.roboScout3D={
       const phase=time*.009;
       root.rotation.y=Math.sin(time*.001)*.12;
       root.position.y=Math.abs(Math.sin(phase))*.025;
+      if(mixer) mixer.update(Math.min(.05,Math.max(0,(time-previousTime)/1000)));
+      previousTime=time;
       arms.forEach(({arm,sign})=>{arm.rotation.x=Math.sin(phase+sign*Math.PI/2)*.34;});
       legs.forEach(({leg,sign})=>{leg.rotation.x=-Math.sin(phase+sign*Math.PI/2)*.36;});
       renderer.render(scene,camera);
