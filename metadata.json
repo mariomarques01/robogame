@@ -1,0 +1,6 @@
+{
+  "name": "RoboRoyale: Arena de Combate",
+  "description": "Jogo tático mobile estilo Clash Royale com robôs mecha, nós de recarga na arena, evolução de cartas e destruição de torres inimigas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
